@@ -4,9 +4,9 @@ const supportedMIMETypes = ['image/svg+xml', 'image/jpeg', 'text/csv', 'image/pn
 
 const formulaInjectionTriggers = ['=', '+', '-', '@', '\t', '\n', '\r']
 
-const blockedSVGTagsAndAtrributes = ['script', '<iframe', 'on', 'onclick', '<foreignObject>', '<use>', '<iframe>']
+const blockedSVGTags = ['script', 'iframe', 'foreignObject', '<use>', '<!ENTITY>', '<foreignObject>']
+
+const blockedSVGAtrributes = ['onload', 'onmouseover', 'onclick', 'onerror','xlink:href', 'externalResourcesRequired', 'onfocus', 'onbegin ', 'onmousemove', 'onmousedown', 'onend']
 //on = on event handlers
 
-export default supportedMIMETypes
-export default formulaInjectionTriggers
-export default blockedSVGTagsAndAtrributes
+export {supportedMIMETypes, formulaInjectionTriggers, blockedSVGAtrributes, blockedSVGTags}
