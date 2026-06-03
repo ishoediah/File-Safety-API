@@ -7,6 +7,5 @@ const formulaInjectionTriggers = ['=', '+', '-', '@', '\t', '\n', '\r']
 const blockedSVGTags = ['script', 'iframe', 'foreignObject', 'use']
 
 const blockedSVGAtrributes = ['xlink:href', 'externalResourcesRequired']
-//on = on event handlers
 
 export {supportedMIMETypes, formulaInjectionTriggers, blockedSVGAtrributes, blockedSVGTags}
