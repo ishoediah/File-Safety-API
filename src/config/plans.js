@@ -1,3 +1,5 @@
+//configuring the plans
+
 const plans = {
     'free': {
         monthlyCalls: 100,
