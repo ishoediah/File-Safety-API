@@ -3,6 +3,7 @@ const errors = {
    //General Error
 
    ROUTE_NOT_FOUND : { 
+    code: "ROUTE_NOT_FOUND",
     status: 404, 
     description: "Route not found", 
     doc_URL: "",
@@ -11,7 +12,8 @@ const errors = {
 
    //Internal Error
 
-   INTERNAL : {
+   INTERNAL_SERVER_ERROR : {
+    code: "INTERNAL_SERVER_ERROR",
     status: 500, 
     description: "Internal Server Error", 
     doc_URL: "", 
@@ -21,6 +23,7 @@ const errors = {
    // Authentication errors
 
    MISSING_API_KEY : {
+    code: 'MISSING_API_KEY',
     status: 401, 
     description: "Missing API key, no auth provided", 
     doc_URL: "", 
@@ -28,6 +31,7 @@ const errors = {
     },
 
    INVALID_API_KEY : {
+    code:"INVALID_API_KEY",
     status: 401,
     description: "Invalid API key, not found or revoked",
     doc_URL: "",
@@ -35,6 +39,7 @@ const errors = {
     },
 
    INVALID_PROXY_SECRET : {
+    code:'INVALID_PROXY_SECRET',
     status: 403,
     description: "Bad Proxy Request",
     doc_URL: "",
@@ -44,6 +49,7 @@ const errors = {
     // Rate/Usage errors
 
    OVER_MONTHLY_LIMIT : {
+    code:"OVER_MONTHLY_LIMIT",
     status: 429,
     description: "Over monthly limit, too many requests",
     doc_URL: "",
@@ -51,6 +57,7 @@ const errors = {
     },
 
    OVER_SECONDLY_LIMIT : {
+    code:"OVER_SECONDLY_LIMIT",
     status: 429,
     description: "Too many requests per second",
     doc_URL: "",
@@ -60,6 +67,7 @@ const errors = {
     // File errors
 
    NO_FILE_PROVIDED : {
+    code:"NO_FILE_PROVIDED",
     status: 400,
     description: "Bad request, no file provided",
     doc_URL: "",
@@ -67,6 +75,7 @@ const errors = {
     },
 
    FILE_TOO_LARGE : {
+    code:"FILE_TOO_LARGE",
     status: 413,
     description: "Payload size too large",
     doc_URL: "",
@@ -74,6 +83,7 @@ const errors = {
     },
 
    UNSUPPORTED_FILE_TYPE : {
+    code:"UNSUPPORTED_FILE_TYPE",
     status: 415,
     description: "Unsupported Media Type",
     doc_URL: "",
@@ -83,7 +93,10 @@ const errors = {
 
 // Helper function
 
-function returnERROR(error) {
-   return JSON.stringify(error)
+function returnError(c, error, details = {}) {
+    const errorObject = {...error, ...details}
+    return c.json(errorObject, error.status)
 }
+
+export {errors, returnError}
 
