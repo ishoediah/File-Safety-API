@@ -9,6 +9,7 @@ export const auth = createMiddleware(async (c, next) => {
     const capturedHeader = c.req.header('Authorization')
 
     if (c.req.header('X-RapidAPI-Proxy-Secret') == process.env.RAPIDAPI_PROXY_SECRET) {
+        c.set('isMarketplace', true)
         await next()
         return;
     }else if( capturedHeader == null ) {
