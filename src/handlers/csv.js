@@ -5,6 +5,8 @@ import { formulaInjectionTriggers } from '../config/constants.js'
 function sanitizeCsv(buffer) {
 
     const findings = []
+    let sanitized
+    try {
     // first turn the buffer into text, then parse into rows of cells
     const text = buffer.toString('utf-8')
     const rows = parse(text, { //added a strictness relaxer to handel rows with varying number of columns and blank lines
@@ -29,7 +31,10 @@ function sanitizeCsv(buffer) {
             }
         }
     }
-    const sanitized = stringify(rows) // turn the rows back into a (cleaned) string
+    sanitized = stringify(rows) // turn the rows back into a (cleaned) string
+    } catch(err) {
+        return { sanitized: null, findings, error: true }
+    }
 
     return { sanitized, findings}
 }
