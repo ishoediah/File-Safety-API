@@ -7,7 +7,10 @@ function sanitizeCsv(buffer) {
     const findings = []
     // first turn the buffer into text, then parse into rows of cells
     const text = buffer.toString('utf-8')
-    const rows = parse(text)   // rows is an array of arrays: [ [cell, cell], [cell, cell] ]
+    const rows = parse(text, { //added a strictness relaxer to handel rows with varying number of columns and blank lines
+       relax_column_count: true,
+       skip_empty_lines: true
+    })   // rows is an array of arrays: [ [cell, cell], [cell, cell] ]
 
     // go through every cell, neutralize dangerous ones, track findings
     for( let i = 0; i < rows.length; i++) { // loop through rows
