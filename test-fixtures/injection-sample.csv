@@ -1,0 +1,5 @@
+Name,Formula,Note
+Alice,=SUM(A1:A10),safe
+Bob,+1234567,test
+Carol,@import,hello
+Dave,-5+5,normal
