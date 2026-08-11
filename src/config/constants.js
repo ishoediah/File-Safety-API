@@ -6,6 +6,6 @@ const formulaInjectionTriggers = ['=', '+', '-', '@', '\t', '\n', '\r']
 
 const blockedSVGTags = ['script', 'iframe', 'foreignObject', 'use']
 
-const blockedSVGAtrributes = ['xlink:href', 'externalResourcesRequired']
+const blockedSVGAttributes = ['xlink:href', 'externalResourcesRequired']
 
-export {supportedMIMETypes, formulaInjectionTriggers, blockedSVGAtrributes, blockedSVGTags}
+export {supportedMIMETypes, formulaInjectionTriggers, blockedSVGAttributes, blockedSVGTags}
