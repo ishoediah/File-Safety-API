@@ -8,6 +8,7 @@ import { scoreFindings } from "../core/scorer.js";
 
 export const sanitize = async(c) => {
 
+    try {
     //const customer = c.get('customer') will be added here for direct traffic
     const body = await c.req.parseBody()
     const file = body['file']
@@ -43,4 +44,7 @@ export const sanitize = async(c) => {
         sanitizedFile: base64File,
         announcements: null   // reserved for future product notifications ( will be used when dirreclty selling the api)
     })
+    } catch(err) {
+        return returnError(c, errors.INTERNAL)
+    }
 }
