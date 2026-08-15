@@ -13,7 +13,7 @@ export const sanitize = async(c) => {
     const file = body['file']
     const buffer = Buffer.from(await file.arrayBuffer())
 
-    const fileType = detectFileType(buffer)
+    const fileType = await detectFileType(buffer)
     const handler = routeToHandler(fileType)
 
     // temporary — confirm stage 1 works
