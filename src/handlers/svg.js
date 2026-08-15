@@ -14,7 +14,11 @@ function sanitizeSvg(buffer) {
         })
         sanitized = Buffer.from(clean, 'utf-8')
         for( let i = 0; i < DOMPurify.removed.length; i++){
-            findings.push(DOMPurify.removed[i])
+            findings.push({
+                category: 'xss',
+                action: 'removed dangerous content',
+                detail: DOMPurify.removed[i]
+            })
         }
     } catch(err) {
         return { sanitized : null, findings, error: true}

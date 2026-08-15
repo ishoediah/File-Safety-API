@@ -11,13 +11,13 @@ async function sanitizeImage(buffer) {
         const metadata = await sharp(buffer).metadata()
 
         if(metadata.exif) {
-            findings.push({ type: 'exif', action: 'removed EXIF metadata'})
+            findings.push({ type: 'exif', category: 'metadata',  action: 'removed EXIF metadata'})
         }
         if(metadata.iptc) {
-            findings.push({ type: 'iptc', action: 'removed IPTC metadata'})
+            findings.push({ type: 'iptc', category: 'metadata',  action: 'removed IPTC metadata'})
         }
         if(metadata.xmp) {
-            findings.push({ type: 'xmp', action: 'removed XMP metadata'})
+            findings.push({ type: 'xmp', category: 'metadata', action: 'removed XMP metadata'})
         }
 
         sanitized = await sharp(buffer).toBuffer()

@@ -24,6 +24,7 @@ function sanitizeCsv(buffer) {
                         row: i,
                         column: j,
                         type: formulaInjectionTriggers[k],
+                        category: 'formula_injection',
                         action: 'neutralised formula injection'
                     }) // push a findings report into the array
                     break
