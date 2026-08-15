@@ -1,6 +1,6 @@
 import { detectFileType } from "../core/detectType.js";
 import { routeToHandler } from "../core/router.js";
-import { returnError } from "../core/errors.js";
+import { returnError, errors } from "../core/errors.js";
 import { sanitizeCsv } from "../handlers/csv.js";
 import { sanitizeImage } from "../handlers/image.js";
 import { sanitizeSvg } from "../handlers/svg.js";
@@ -33,10 +33,14 @@ export const sanitize = async(c) => {
         return returnError(c, errors.INTERNAL)
     }
 
-    return c.json({ //temporary response for testing
-        fileType, 
-        handler, 
+    const score = scoreFindings(result.findings)
+    const base64File = result.sanitized.toString('base64')
+    return c.json({
+        detectedType: fileType,
+        riskLevel: score.highest,
+        findingsCount: score.found,
         findings: result.findings,
-        findingsCount: result.findings.length
+        sanitizedFile: base64File,
+        announcements: null   // reserved for future product notifications ( will be used when dirreclty selling the api)
     })
 }
