@@ -17,9 +17,15 @@ app.get('/v1/usage', auth, usage)
 // runs in order: auth -> ratelimit etc
 app.post('/v1/sanitize', auth, rateLimit, fileGuard, sanitize)
 
-serve({
+// exporting the app so tests can import it without starting a server
+export { app }
+
+// only start the server when this file is run directly (node src/index.js), not when it's imported by a test
+if (process.env.NODE_ENV !== 'test') {
+    serve({
         fetch: app.fetch,
         port: PORT
     }, (info) => {
         console.log(`App is running on port ${PORT}`)
     })
+}
