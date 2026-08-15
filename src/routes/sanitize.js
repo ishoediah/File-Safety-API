@@ -16,10 +16,27 @@ export const sanitize = async(c) => {
     const fileType = await detectFileType(buffer)
     const handler = routeToHandler(fileType)
 
-    // temporary — confirm stage 1 works
-    console.log('detected type:', fileType)
-    console.log('handler:', handler)
+    if (handler === null) {
+        return returnError(c, errors.UNSUPPORTED_FILE_TYPE)
+    }
 
-    return c.json({ fileType, handler })  // temporary response to test
+    const handlerFunctions = {
+        image: sanitizeImage,
+        csv: sanitizeCsv,
+        svg: sanitizeSvg
+    }
 
+    const handlerFunction = handlerFunctions[handler]
+    const result = await handlerFunction(buffer)
+
+    if (result.error) {
+        return returnError(c, errors.INTERNAL)
+    }
+
+    return c.json({ //temporary response for testing
+        fileType, 
+        handler, 
+        findings: result.findings,
+        findingsCount: result.findings.length
+    })
 }
