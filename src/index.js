@@ -7,7 +7,7 @@ import { sanitize } from "./routes/sanitize.js"
 import { health } from "./routes/health.js"
 import { usage } from "./routes/usage.js"
 
-const PORT = 3000
+const PORT = process.env.PORT || 3000
 const app = new Hono()
 
 app.get('/v1/health', health)
