@@ -22,10 +22,14 @@ export { app }
 
 // only start the server when this file is run directly (node src/index.js), not when it's imported by a test
 if (process.env.NODE_ENV !== 'test') {
-    serve({
+    const server = serve({
         fetch: app.fetch,
         port: PORT
     }, (info) => {
         console.log(`App is running on port ${PORT}`)
+    })
+
+    process.on('SIGTERM', () => {
+        server.close(() => process.exit(0))
     })
 }
