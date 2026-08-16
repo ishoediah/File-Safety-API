@@ -11,7 +11,7 @@ describe('sanitizeCsv', () => {
   it('See if `=SUM` with the apostrofe is included in the sanitized list' , () => {
     const buffer = readFileSync('test-fixtures/injection-sample.csv')
     const result = sanitizeCsv(buffer)
-    expect(result.sanitized).toContain("'=SUM")
+    expect(result.sanitized.toString('utf-8')).toContain("'=SUM")
   })
   it('Csv with no injection triggers should have no findings' , () => {
     const buffer = readFileSync('test-fixtures/Sample-csv.csv')

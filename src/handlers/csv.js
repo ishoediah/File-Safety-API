@@ -32,7 +32,7 @@ function sanitizeCsv(buffer) {
             }
         }
     }
-    sanitized = stringify(rows) // turn the rows back into a (cleaned) string
+    sanitized = Buffer.from(stringify(rows), 'utf-8')
     } catch(err) {
         return { sanitized: null, findings, error: true }
     }
