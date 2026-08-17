@@ -10,8 +10,8 @@
   },
   "servers": [
     {
-      "url": "file-safety-api-production.up.railway.app",
-      "description": "Production server (replace with your real deployment URL)"
+      "url": "https://file-safety-api-production.up.railway.app",
+      "description": "Production Server"
     }
   ],
   "tags": [
