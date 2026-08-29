@@ -73,3 +73,29 @@ grant execute on function increment_usage(uuid, text) to service_role;
 -- after the grants above, you may also need:
 --   GRANT USAGE ON SCHEMA public TO service_role;
 -- ------------------------------------------------------------
+
+--Cron Job
+--In the privacy policy we have a retention period of 90 days for usage data. 
+--Usage data includes what type of files get passed trough the api most( like png or csv) and when they got passed trough
+
+--First we go to database -> extensions and enable pg_cron. Then we do the following in the sql editor
+--creating the cron job
+
+select cron.schedule(
+  'purge-old-request-logs',           -- job name
+  '0 3 * * *',                        -- schedule: every day at 03:00 UTC
+  $$
+    delete from request_log
+    where created_at < now() - interval '90 days'
+  $$
+);
+
+
+-- check if cron job is active
+
+select * from cron.job;
+
+-- test to see what it would delete (NOTE: when the api is not listed, there will be no data to delete, so this will just show 0)
+
+select count(*) from request_log
+where created_at < now() - interval '90 days';
