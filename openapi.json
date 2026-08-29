@@ -3,9 +3,11 @@
   "info": {
     "title": "File Safety API",
     "version": "1.0.0",
-    "description": "Structural file sanitization API. Removes image metadata (EXIF/GPS/XMP), neutralizes CSV formula injection, and strips XSS vectors from SVG files. Detects the true file type from magic bytes to catch spoofing, returns a cleaned file plus a risk assessment.\n\n**Important behavioral notes:**\n- Files are processed in memory and never stored.\n- Image sanitization removes ALL embedded metadata, including GPS location.\n- CSV formula-injection cells are neutralized by prefixing them with a single apostrophe (they display as text, never execute).\n- SVG sanitization removes ALL embedded links (`<a>` href/xlink:href) as a security measure, in addition to scripts, event handlers, and dangerous URIs.\n- Errors are returned as consistent JSON objects with a stable, machine-readable `code` field (e.g. `UNSUPPORTED_FILE_TYPE`, `FILE_TOO_LARGE`) that you can rely on for programmatic error handling.\n- The API is a structural sanitization layer. It is NOT antivirus and does not guarantee a file is free of all threats.",
+    "description": "Structural file sanitization API. Removes image metadata (EXIF/GPS/XMP), neutralizes CSV formula injection, and strips XSS vectors from SVG files. Detects the true file type from magic bytes to catch spoofing, returns a cleaned file plus a risk assessment.\n\n**Important behavioral notes:**\n- Files are processed in memory and never stored.\n- Image sanitization removes ALL embedded metadata, including GPS location data that can reveal where a photo was taken \u2014 protecting the privacy of the people and places in your uploads.\n- CSV formula-injection cells are neutralized by prefixing them with a single apostrophe (they display as text, never execute).\n- SVG sanitization removes ALL embedded links (`<a>` href/xlink:href) as a security measure, in addition to scripts, event handlers, and dangerous URIs.\n- Errors are returned as consistent JSON objects with a stable, machine-readable `code` field (e.g. `UNSUPPORTED_FILE_TYPE`, `FILE_TOO_LARGE`) that you can rely on for programmatic error handling.\n- The API is a structural sanitization layer. It is NOT antivirus and does not guarantee a file is free of all threats.",
+    "termsOfService": "https://ishoediah.github.io/File-Safety-API-Legal/terms.html",
     "contact": {
-      "name": "File Safety API Support"
+      "name": "File Safety API Support",
+      "email": "oeditishaan@gmail.com"
     }
   },
   "servers": [
@@ -15,25 +17,42 @@
     }
   ],
   "tags": [
-    { "name": "Sanitization", "description": "File sanitization operations" },
-    { "name": "Account", "description": "Usage and account information" },
-    { "name": "System", "description": "Service health" }
+    {
+      "name": "Sanitization",
+      "description": "File sanitization operations"
+    },
+    {
+      "name": "Account",
+      "description": "Usage and account information"
+    },
+    {
+      "name": "System",
+      "description": "Service health"
+    }
   ],
   "paths": {
     "/v1/sanitize": {
       "post": {
-        "tags": ["Sanitization"],
+        "tags": [
+          "Sanitization"
+        ],
         "summary": "Sanitize a file",
-        "description": "Upload a file to be sanitized. The API detects the true file type from its content, routes it to the appropriate sanitizer, removes dangerous content, and returns the cleaned file (base64-encoded) along with a risk assessment and a list of findings describing what was removed or neutralized.\n\nSupported types: JPEG, PNG, WebP, GIF, CSV, and SVG.",
+        "description": "Upload a file to be sanitized. The API detects the true file type from its content, routes it to the appropriate sanitizer, removes dangerous content, and returns the cleaned file (base64-encoded) along with a risk assessment and a list of findings describing what was removed or neutralized.\n\nFor images, this includes stripping GPS/location metadata and all other hidden EXIF/XMP data. Supported types: JPEG, PNG, WebP, GIF, CSV, and SVG.",
         "operationId": "sanitizeFile",
-        "security": [{ "ApiKeyAuth": [] }],
+        "security": [
+          {
+            "ApiKeyAuth": []
+          }
+        ],
         "requestBody": {
           "required": true,
           "content": {
             "multipart/form-data": {
               "schema": {
                 "type": "object",
-                "required": ["file"],
+                "required": [
+                  "file"
+                ],
                 "properties": {
                   "file": {
                     "type": "string",
@@ -50,44 +69,131 @@
             "description": "File sanitized successfully.",
             "content": {
               "application/json": {
-                "schema": { "$ref": "#/components/schemas/SanitizeResponse" }
+                "schema": {
+                  "$ref": "#/components/schemas/SanitizeResponse"
+                },
+                "example": {
+                  "detectedType": "image/jpeg",
+                  "riskLevel": "LOW",
+                  "findingsCount": 2,
+                  "findings": [
+                    {
+                      "type": "exif",
+                      "category": "metadata",
+                      "action": "removed EXIF metadata"
+                    },
+                    {
+                      "type": "xmp",
+                      "category": "metadata",
+                      "action": "removed XMP metadata"
+                    }
+                  ],
+                  "sanitizedFile": "/9j/4AAQSkZJRgABAQEASABIAAD...",
+                  "announcements": null
+                }
               }
             }
           },
           "400": {
             "description": "No file was provided in the request.",
             "content": {
-              "application/json": { "schema": { "$ref": "#/components/schemas/Error" } }
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                },
+                "example": {
+                  "code": "NO_FILE_PROVIDED",
+                  "status": 400,
+                  "description": "No file was provided in the request.",
+                  "doc_URL": "",
+                  "request_ID": ""
+                }
+              }
             }
           },
           "401": {
-            "description": "Missing or invalid API key.",
+            "description": "Missing or invalid API key. Returns code MISSING_API_KEY when no key is provided, or INVALID_API_KEY when the key is not recognized.",
             "content": {
-              "application/json": { "schema": { "$ref": "#/components/schemas/Error" } }
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                },
+                "example": {
+                  "code": "INVALID_API_KEY",
+                  "status": 401,
+                  "description": "The provided API key is missing or invalid.",
+                  "doc_URL": "",
+                  "request_ID": ""
+                }
+              }
             }
           },
           "413": {
             "description": "The uploaded file exceeds your plan's size limit.",
             "content": {
-              "application/json": { "schema": { "$ref": "#/components/schemas/Error" } }
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                },
+                "example": {
+                  "code": "FILE_TOO_LARGE",
+                  "status": 413,
+                  "description": "The uploaded file exceeds your plan's size limit.",
+                  "doc_URL": "",
+                  "request_ID": ""
+                }
+              }
             }
           },
           "415": {
             "description": "The file type is not supported.",
             "content": {
-              "application/json": { "schema": { "$ref": "#/components/schemas/Error" } }
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                },
+                "example": {
+                  "code": "UNSUPPORTED_FILE_TYPE",
+                  "status": 415,
+                  "description": "The file type is not supported. Supported types: JPEG, PNG, WebP, GIF, CSV, SVG.",
+                  "doc_URL": "",
+                  "request_ID": ""
+                }
+              }
             }
           },
           "429": {
             "description": "You have exceeded your plan's monthly call limit.",
             "content": {
-              "application/json": { "schema": { "$ref": "#/components/schemas/Error" } }
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                },
+                "example": {
+                  "code": "OVER_MONTHLY_LIMIT",
+                  "status": 429,
+                  "description": "You have exceeded your plan's monthly call limit.",
+                  "doc_URL": "",
+                  "request_ID": ""
+                }
+              }
             }
           },
           "500": {
-            "description": "An internal error occurred while processing the file.",
+            "description": "Internal Server Error",
             "content": {
-              "application/json": { "schema": { "$ref": "#/components/schemas/Error" } }
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                },
+                "example": {
+                  "code": "INTERNAL_SERVER_ERROR",
+                  "status": 500,
+                  "description": "Internal Server Error",
+                  "doc_URL": "",
+                  "request_ID": ""
+                }
+              }
             }
           }
         }
@@ -95,30 +201,67 @@
     },
     "/v1/usage": {
       "get": {
-        "tags": ["Account"],
+        "tags": [
+          "Account"
+        ],
         "summary": "Get current usage",
         "description": "Returns your current month's usage, plan, monthly limit, and remaining calls. This endpoint does not count against your rate limit.",
         "operationId": "getUsage",
-        "security": [{ "ApiKeyAuth": [] }],
+        "security": [
+          {
+            "ApiKeyAuth": []
+          }
+        ],
         "responses": {
           "200": {
             "description": "Current usage information.",
             "content": {
               "application/json": {
-                "schema": { "$ref": "#/components/schemas/UsageResponse" }
+                "schema": {
+                  "$ref": "#/components/schemas/UsageResponse"
+                },
+                "example": {
+                  "plan": "free",
+                  "used": 47,
+                  "limit": 100,
+                  "remaining": 53,
+                  "month": "2026-06"
+                }
               }
             }
           },
           "401": {
-            "description": "Missing or invalid API key.",
+            "description": "Missing or invalid API key. Returns code MISSING_API_KEY when no key is provided, or INVALID_API_KEY when the key is not recognized.",
             "content": {
-              "application/json": { "schema": { "$ref": "#/components/schemas/Error" } }
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                },
+                "example": {
+                  "code": "INVALID_API_KEY",
+                  "status": 401,
+                  "description": "The provided API key is missing or invalid.",
+                  "doc_URL": "",
+                  "request_ID": ""
+                }
+              }
             }
           },
           "500": {
-            "description": "An internal error occurred.",
+            "description": "Internal Server Error",
             "content": {
-              "application/json": { "schema": { "$ref": "#/components/schemas/Error" } }
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                },
+                "example": {
+                  "code": "INTERNAL_SERVER_ERROR",
+                  "status": 500,
+                  "description": "Internal Server Error",
+                  "doc_URL": "",
+                  "request_ID": ""
+                }
+              }
             }
           }
         }
@@ -126,20 +269,65 @@
     },
     "/v1/health": {
       "get": {
-        "tags": ["System"],
+        "tags": [
+          "System"
+        ],
         "summary": "Health check",
-        "description": "Public endpoint to check whether the API is up and responding. Requires no authentication.",
+        "description": "Public endpoint to check whether the API is up and its database is reachable. Requires no authentication. Returns HTTP 200 when healthy, or HTTP 503 when the database is unreachable.",
         "operationId": "healthCheck",
         "responses": {
           "200": {
-            "description": "The service is healthy.",
+            "description": "The service is healthy and the database is reachable.",
             "content": {
               "application/json": {
                 "schema": {
                   "type": "object",
                   "properties": {
-                    "status": { "type": "string", "examples": ["ok"] }
+                    "status": {
+                      "type": "string",
+                      "examples": [
+                        "ok"
+                      ]
+                    },
+                    "DB": {
+                      "type": "string",
+                      "examples": [
+                        "online"
+                      ]
+                    }
                   }
+                },
+                "example": {
+                  "status": "ok",
+                  "DB": "online"
+                }
+              }
+            }
+          },
+          "503": {
+            "description": "The service is up but the database is unreachable.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "status": {
+                      "type": "string",
+                      "examples": [
+                        "error"
+                      ]
+                    },
+                    "DB": {
+                      "type": "string",
+                      "examples": [
+                        "unreachable"
+                      ]
+                    }
+                  }
+                },
+                "example": {
+                  "status": "error",
+                  "DB": "unreachable"
                 }
               }
             }
@@ -163,33 +351,54 @@
           "detectedType": {
             "type": "string",
             "description": "The true MIME type detected from the file's content (not its extension).",
-            "examples": ["image/jpeg"]
+            "examples": [
+              "image/jpeg"
+            ]
           },
           "riskLevel": {
             "type": "string",
             "description": "Overall risk level of the original file, based on the most severe finding.",
-            "enum": ["CLEAN", "LOW", "MEDIUM", "HIGH", "CRITICAL"],
-            "examples": ["LOW"]
+            "enum": [
+              "CLEAN",
+              "LOW",
+              "MEDIUM",
+              "HIGH",
+              "CRITICAL"
+            ],
+            "examples": [
+              "LOW"
+            ]
           },
           "findingsCount": {
             "type": "integer",
             "description": "The number of issues found and neutralized.",
-            "examples": [2]
+            "examples": [
+              2
+            ]
           },
           "findings": {
             "type": "array",
             "description": "Details of each issue found and what was done about it.",
-            "items": { "$ref": "#/components/schemas/Finding" }
+            "items": {
+              "$ref": "#/components/schemas/Finding"
+            }
           },
           "sanitizedFile": {
             "type": "string",
             "description": "The sanitized file, base64-encoded. Decode this to obtain the cleaned file.",
-            "examples": ["/9j/4AAQSkZJRgABAQ..."]
+            "examples": [
+              "/9j/4AAQSkZJRgABAQ..."
+            ]
           },
           "announcements": {
-            "type": ["string", "null"],
+            "type": [
+              "string",
+              "null"
+            ],
             "description": "Optional product announcements. Null when there are none.",
-            "examples": [null]
+            "examples": [
+              null
+            ]
           }
         }
       },
@@ -200,28 +409,43 @@
           "category": {
             "type": "string",
             "description": "The category of the issue.",
-            "enum": ["xss", "formula_injection", "external_resource", "metadata"],
-            "examples": ["metadata"]
+            "enum": [
+              "xss",
+              "formula_injection",
+              "external_resource",
+              "metadata"
+            ],
+            "examples": [
+              "metadata"
+            ]
           },
           "action": {
             "type": "string",
             "description": "A human-readable description of what was done.",
-            "examples": ["removed EXIF metadata"]
+            "examples": [
+              "removed EXIF metadata"
+            ]
           },
           "type": {
             "type": "string",
             "description": "Additional detail about the specific issue (varies by category).",
-            "examples": ["exif"]
+            "examples": [
+              "exif"
+            ]
           },
           "row": {
             "type": "integer",
             "description": "For CSV findings: the row index of the affected cell.",
-            "examples": [1]
+            "examples": [
+              1
+            ]
           },
           "column": {
             "type": "integer",
             "description": "For CSV findings: the column index of the affected cell.",
-            "examples": [1]
+            "examples": [
+              1
+            ]
           }
         }
       },
@@ -231,27 +455,37 @@
           "plan": {
             "type": "string",
             "description": "Your current plan.",
-            "examples": ["free"]
+            "examples": [
+              "free"
+            ]
           },
           "used": {
             "type": "integer",
             "description": "Number of calls used this month.",
-            "examples": [47]
+            "examples": [
+              47
+            ]
           },
           "limit": {
             "type": "integer",
             "description": "Your monthly call limit.",
-            "examples": [100]
+            "examples": [
+              100
+            ]
           },
           "remaining": {
             "type": "integer",
             "description": "Calls remaining this month.",
-            "examples": [53]
+            "examples": [
+              53
+            ]
           },
           "month": {
             "type": "string",
             "description": "The current billing month in YYYY-MM format.",
-            "examples": ["2026-06"]
+            "examples": [
+              "2026-06"
+            ]
           }
         }
       },
@@ -261,27 +495,37 @@
           "code": {
             "type": "string",
             "description": "A stable, machine-readable error code.",
-            "examples": ["UNSUPPORTED_FILE_TYPE"]
+            "examples": [
+              "UNSUPPORTED_FILE_TYPE"
+            ]
           },
           "status": {
             "type": "integer",
             "description": "The HTTP status code.",
-            "examples": [415]
+            "examples": [
+              415
+            ]
           },
           "description": {
             "type": "string",
             "description": "A human-readable description of the error.",
-            "examples": ["Unsupported Media Type"]
+            "examples": [
+              "Unsupported Media Type"
+            ]
           },
           "doc_URL": {
             "type": "string",
             "description": "A link to documentation about this error, when available.",
-            "examples": [""]
+            "examples": [
+              ""
+            ]
           },
           "request_ID": {
             "type": "string",
             "description": "A unique identifier for this request, useful for support.",
-            "examples": [""]
+            "examples": [
+              ""
+            ]
           }
         }
       }
