@@ -1,5 +1,5 @@
 {
-  "openapi": "3.1.0",
+  "openapi": "3.0.3",
   "info": {
     "title": "File Safety API",
     "version": "1.0.0",
@@ -285,15 +285,11 @@
                   "properties": {
                     "status": {
                       "type": "string",
-                      "examples": [
-                        "ok"
-                      ]
+                      "example": "ok"
                     },
                     "DB": {
                       "type": "string",
-                      "examples": [
-                        "online"
-                      ]
+                      "example": "online"
                     }
                   }
                 },
@@ -313,15 +309,11 @@
                   "properties": {
                     "status": {
                       "type": "string",
-                      "examples": [
-                        "error"
-                      ]
+                      "example": "error"
                     },
                     "DB": {
                       "type": "string",
-                      "examples": [
-                        "unreachable"
-                      ]
+                      "example": "unreachable"
                     }
                   }
                 },
@@ -351,9 +343,7 @@
           "detectedType": {
             "type": "string",
             "description": "The true MIME type detected from the file's content (not its extension).",
-            "examples": [
-              "image/jpeg"
-            ]
+            "example": "image/jpeg"
           },
           "riskLevel": {
             "type": "string",
@@ -365,16 +355,12 @@
               "HIGH",
               "CRITICAL"
             ],
-            "examples": [
-              "LOW"
-            ]
+            "example": "LOW"
           },
           "findingsCount": {
             "type": "integer",
             "description": "The number of issues found and neutralized.",
-            "examples": [
-              2
-            ]
+            "example": 2
           },
           "findings": {
             "type": "array",
@@ -386,19 +372,13 @@
           "sanitizedFile": {
             "type": "string",
             "description": "The sanitized file, base64-encoded. Decode this to obtain the cleaned file.",
-            "examples": [
-              "/9j/4AAQSkZJRgABAQ..."
-            ]
+            "example": "/9j/4AAQSkZJRgABAQ..."
           },
           "announcements": {
-            "type": [
-              "string",
-              "null"
-            ],
+            "type": "string",
             "description": "Optional product announcements. Null when there are none.",
-            "examples": [
-              null
-            ]
+            "nullable": true,
+            "example": null
           }
         }
       },
@@ -415,37 +395,27 @@
               "external_resource",
               "metadata"
             ],
-            "examples": [
-              "metadata"
-            ]
+            "example": "metadata"
           },
           "action": {
             "type": "string",
             "description": "A human-readable description of what was done.",
-            "examples": [
-              "removed EXIF metadata"
-            ]
+            "example": "removed EXIF metadata"
           },
           "type": {
             "type": "string",
             "description": "Additional detail about the specific issue (varies by category).",
-            "examples": [
-              "exif"
-            ]
+            "example": "exif"
           },
           "row": {
             "type": "integer",
             "description": "For CSV findings: the row index of the affected cell.",
-            "examples": [
-              1
-            ]
+            "example": 1
           },
           "column": {
             "type": "integer",
             "description": "For CSV findings: the column index of the affected cell.",
-            "examples": [
-              1
-            ]
+            "example": 1
           }
         }
       },
@@ -455,37 +425,27 @@
           "plan": {
             "type": "string",
             "description": "Your current plan.",
-            "examples": [
-              "free"
-            ]
+            "example": "free"
           },
           "used": {
             "type": "integer",
             "description": "Number of calls used this month.",
-            "examples": [
-              47
-            ]
+            "example": 47
           },
           "limit": {
             "type": "integer",
             "description": "Your monthly call limit.",
-            "examples": [
-              100
-            ]
+            "example": 100
           },
           "remaining": {
             "type": "integer",
             "description": "Calls remaining this month.",
-            "examples": [
-              53
-            ]
+            "example": 53
           },
           "month": {
             "type": "string",
             "description": "The current billing month in YYYY-MM format.",
-            "examples": [
-              "2026-06"
-            ]
+            "example": "2026-06"
           }
         }
       },
@@ -495,37 +455,27 @@
           "code": {
             "type": "string",
             "description": "A stable, machine-readable error code.",
-            "examples": [
-              "UNSUPPORTED_FILE_TYPE"
-            ]
+            "example": "UNSUPPORTED_FILE_TYPE"
           },
           "status": {
             "type": "integer",
             "description": "The HTTP status code.",
-            "examples": [
-              415
-            ]
+            "example": 415
           },
           "description": {
             "type": "string",
             "description": "A human-readable description of the error.",
-            "examples": [
-              "Unsupported Media Type"
-            ]
+            "example": "Unsupported Media Type"
           },
           "doc_URL": {
             "type": "string",
             "description": "A link to documentation about this error, when available.",
-            "examples": [
-              ""
-            ]
+            "example": ""
           },
           "request_ID": {
             "type": "string",
             "description": "A unique identifier for this request, useful for support.",
-            "examples": [
-              ""
-            ]
+            "example": ""
           }
         }
       }
