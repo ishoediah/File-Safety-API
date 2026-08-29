@@ -5,11 +5,13 @@ import { sanitizeCsv } from "../handlers/csv.js";
 import { sanitizeImage } from "../handlers/image.js";
 import { sanitizeSvg } from "../handlers/svg.js";
 import { scoreFindings } from "../core/scorer.js";
+import { logRequest } from "../db/requestLog.js";
 
 export const sanitize = async(c) => {
 
     try {
-    //const customer = c.get('customer') will be added here for direct traffic
+    const customer = c.get('customer')
+    const customerId = customer ? customer.customer_id : null
     const body = await c.req.parseBody()
     const file = body['file']
     const buffer = Buffer.from(await file.arrayBuffer())
@@ -36,6 +38,7 @@ export const sanitize = async(c) => {
 
     const score = scoreFindings(result.findings)
     const base64File = result.sanitized.toString('base64')
+    await logRequest(customerId, fileType, score.highest)
     return c.json({
         detectedType: fileType,
         riskLevel: score.highest,
