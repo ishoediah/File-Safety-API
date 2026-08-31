@@ -1,5 +1,7 @@
 # File Safety API
 
+[![CI](https://github.com/ishoediah/File-Safety-API/actions/workflows/ci.yml/badge.svg)](https://github.com/ishoediah/File-Safety-API/actions/workflows/ci.yml)
+
 A REST API that sanitizes uploaded files to remove security and privacy risks before they're stored, displayed, or shared. It strips hidden metadata from images (including GPS location), neutralizes formula-injection attacks in spreadsheets, and removes cross-site-scripting vectors from SVG files — and it detects file-type spoofing by inspecting each file's actual content rather than trusting its extension.
 
 Files are processed entirely in memory and are **never stored**.
