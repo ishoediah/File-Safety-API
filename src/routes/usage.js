@@ -17,6 +17,6 @@ export const usage = async (c) => {
         month: month
     })
     } catch(err) {
-        return returnError(c, errors.INTERNAL)
+        return returnError(c, errors.INTERNAL_SERVER_ERROR)
     }
 }

@@ -33,7 +33,7 @@ export const sanitize = async(c) => {
     const result = await handlerFunction(buffer)
 
     if (result.error) {
-        return returnError(c, errors.INTERNAL)
+        return returnError(c, errors.INTERNAL_SERVER_ERROR)
     }
 
     const score = scoreFindings(result.findings)
@@ -48,6 +48,6 @@ export const sanitize = async(c) => {
         announcements: null   // reserved for future product notifications ( will be used when dirreclty selling the api)
     })
     } catch(err) {
-        return returnError(c, errors.INTERNAL)
+        return returnError(c, errors.INTERNAL_SERVER_ERROR)
     }
 }
