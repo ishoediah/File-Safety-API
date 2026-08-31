@@ -266,6 +266,21 @@ Planned: PDF support, a batch endpoint, richer GPS-coordinate reporting, zip-bom
 
 ---
 
+## Running locally
+
+```bash
+git clone https://github.com/ishoediah/File-Safety-API.git
+cd File-Safety-API
+npm install
+npm test
+```
+
+> **Note:** Use `npm install` rather than `npm ci`. This project depends on [`sharp`](https://sharp.pixelplumbing.com/), whose platform-specific binaries aren't fully captured in the committed lockfile, so `npm ci` (which installs strictly from the lockfile) can fail on a different OS than the one the lockfile was generated on. `npm install` resolves the correct binaries for your platform.
+
+You'll also need a `.env` file with your Supabase credentials (see `.env.example`).
+
+---
+
 ## License
 
 To be released under the MIT License.
