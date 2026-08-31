@@ -17,7 +17,9 @@
   "scripts": {
     "dev": "nodemon src/index.js",
     "start": "node src/index.js",
-    "test": "vitest"
+    "test": "vitest",
+    "test:unit": "vitest run tests/core tests/handlers",
+    "test:integration": "vitest run tests/routes"
   },
   "dependencies": {
     "@hono/node-server": "^2.0.3",
