@@ -55,4 +55,23 @@ describe('POST /v1/sanitize', () => {
     expect(res.status).toBe(415)  // UNSUPPORTED_FILE_TYPE
   })
 
+  it('Returns 500 for a corrupt image that fails during sanitization', async () => {
+    const realPng = readFileSync('test-fixtures/Sample-png.png')
+    // Keep the header (detects as PNG) but truncate the image data so sharp fails.
+    const truncated = realPng.subarray(0, 40)
+
+    const form = new FormData()
+    form.append('file', new Blob([truncated]), 'corrupt.png')
+
+    const res = await app.request('/v1/sanitize', {
+      method: 'POST',
+      headers: { 'Authorization': `Bearer ${TEST_KEY}` },
+      body: form
+    })
+
+    expect(res.status).toBe(500)
+    const data = await res.json()
+    expect(data.code).toBe('INTERNAL_SERVER_ERROR')
+  })
+
 })
