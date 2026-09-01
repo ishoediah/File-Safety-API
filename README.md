@@ -271,13 +271,24 @@ Planned: PDF support, a batch endpoint, richer GPS-coordinate reporting, zip-bom
 ```bash
 git clone https://github.com/ishoediah/File-Safety-API.git
 cd File-Safety-API
-npm install
-npm test
+npm ci
+```
+> If `npm ci` reports a lockfile mismatch, use `npm install` instead.
+
+Create a `.env` file in the project root with your Supabase credentials and a test API key (see `.env.example` for the required variables)
+
+Then run the test suite:
+
+```bash
+npm test          # all tests (needs Supabase reachable)
+npm run test:unit # unit tests only (no database needed)
 ```
 
-> **Note:** Use `npm install` rather than `npm ci`. This project depends on [`sharp`](https://sharp.pixelplumbing.com/), whose platform-specific binaries aren't fully captured in the committed lockfile, so `npm ci` (which installs strictly from the lockfile) can fail on a different OS than the one the lockfile was generated on. `npm install` resolves the correct binaries for your platform.
+To start the server locally:
 
-You'll also need a `.env` file with your Supabase credentials (see `.env.example`).
+```bash
+npm node src/index.js
+```
 
 ---
 
