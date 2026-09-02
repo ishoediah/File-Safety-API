@@ -41,7 +41,8 @@ describe('POST /v1/sanitize (mocked DB — full pipeline)', () => {
     hashedKeyLookup.mockResolvedValue(fakeCustomer) 
     getUsage.mockResolvedValue(0)                    
     incrementUsage.mockResolvedValue(undefined)      
-    logRequest.mockResolvedValue(undefined)          
+    logRequest.mockResolvedValue(undefined)     
+    process.env.RAPIDAPI_PROXY_SECRET = 'test-proxy-secret'     
   })
 
   it('Sanitizes a valid PNG through the full pipeline', async () => {
@@ -148,8 +149,6 @@ describe('POST /v1/sanitize (mocked DB — full pipeline)', () => {
   })
 
   it('Treats marketplace traffic (proxy secret) as authenticated', async () => {
-    // Set a known proxy secret so the test doesn't depend on a real env var (keeps it deterministic and CI-safe). auth.js compares the header to process.env.RAPIDAPI_PROXY_SECRET.
-    process.env.RAPIDAPI_PROXY_SECRET = 'test-proxy-secret'
 
     const form = new FormData()
     const fileBuffer = readFileSync('test-fixtures/Sample-png.png')
