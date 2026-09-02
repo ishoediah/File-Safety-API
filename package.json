@@ -19,7 +19,8 @@
     "start": "node src/index.js",
     "test": "vitest",
     "test:unit": "vitest run tests/core tests/handlers",
-    "test:integration": "vitest run tests/routes"
+    "test:integration": "vitest run tests/routes",
+    "test:ci": "vitest run tests/core tests/handlers tests/pipeline"
   },
   "dependencies": {
     "@hono/node-server": "^2.0.3",
