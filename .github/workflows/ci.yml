@@ -31,3 +31,7 @@ jobs:
         run: npm run test:ci
         env:
           NODE_ENV: test
+          # Dummy values so the Supabase client can be constructed at import time.
+          # All real DB calls are mocked in the tests, so these are never used for actual requests — they only satisfy createClient()'s constructor check.
+          SUPABASE_URL: https://dummy.supabase.co
+          SUPABASE_SERVICE_KEY: dummy-service-key-for-ci
