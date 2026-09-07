@@ -7,6 +7,14 @@ import { sanitizeSvg } from "../handlers/svg.js";
 import { scoreFindings } from "../core/scorer.js";
 import { logRequest } from "../db/requestLog.js";
 
+const timeOutMS = 15000
+
+function timeOut(ms) {
+    return new Promise((_, reject) => {
+        setTimeout(()=> reject(new Error('Pipeline Timeout')), timeOutMS)
+    })
+}
+
 export const sanitize = async(c) => {
 
     try {
@@ -30,7 +38,11 @@ export const sanitize = async(c) => {
     }
 
     const handlerFunction = handlerFunctions[handler]
-    const result = await handlerFunction(buffer)
+    
+    const result = await Promise.race([
+        handlerFunction(buffer),
+        timeOut(timeOutMS)
+    ])
 
     if (result.error) {
         return returnError(c, errors.INTERNAL_SERVER_ERROR)
