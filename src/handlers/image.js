@@ -2,13 +2,16 @@ import sharp from 'sharp';
 
 sharp.block({ operation: ["VipsForeignLoadTiff", "VipsForeignLoadVips"] });
 
+const pixelLimit = 24000000 //24 Megapixels
+const timeOutSeconds = 10
+
 async function sanitizeImage(buffer) {
     const findings = []
     let sanitized
 
     try{
 
-        const metadata = await sharp(buffer).metadata()
+        const metadata = await sharp(buffer, { limitInputPixels: pixelLimit }).metadata()
 
         if(metadata.exif) {
             findings.push({ type: 'exif', category: 'metadata',  action: 'removed EXIF metadata'})
@@ -20,7 +23,7 @@ async function sanitizeImage(buffer) {
             findings.push({ type: 'xmp', category: 'metadata', action: 'removed XMP metadata'})
         }
 
-        sanitized = await sharp(buffer).toBuffer()
+        sanitized = await sharp(buffer, { limitInputPixels: pixelLimit }).timeout({seconds: timeOutSeconds}).toBuffer()
 
     } catch (err) {
         return { sanitized: null, findings, error: true}
