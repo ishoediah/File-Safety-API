@@ -13,12 +13,12 @@ const plans = {
     },
     'pro' : {
         monthlyCalls: 10000,
-        fileSizeCap: 50 * 1024 * 1024,
+        fileSizeCap: 15 * 1024 * 1024,
         callsPerSecond: 20
     },
     'business' : {
         monthlyCalls: 100000,
-        fileSizeCap: 100 * 1024 * 1024,
+        fileSizeCap: 25 * 1024 * 1024,
         callsPerSecond: 50
     }
 }
