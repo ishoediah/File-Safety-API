@@ -45,6 +45,12 @@ export const sanitize = async(c) => {
     ])
 
     if (result.error) {
+        if (result.reason === 'too_large') {
+            return returnError(c, errors.IMAGE_TOO_LARGE)
+        }
+        if (result.reason === 'timeout') {
+            return returnError(c, errors.PROCESSING_TIMEOUT)
+        }
         return returnError(c, errors.INTERNAL_SERVER_ERROR)
     }
 
