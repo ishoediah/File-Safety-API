@@ -244,6 +244,7 @@ npm test
 The API was load-tested with [k6](https://k6.io/) before launch to understand its behavior under concurrent uploads. This surfaced — and led to fixes for — an out-of-memory crash under concurrent SVG processing, along with distinct memory/CPU profiles for each file type.
 
 See [**loadTest/LOADTEST.md**](./loadTest/LOADTEST.md) for the full methodology, findings, and charts.
+
 ---
 
 ## Security notes
