@@ -105,6 +105,14 @@ const errors = {
         doc_URL: "",
         request_ID: "String"
     },
+
+    SERVER_BUSY : {
+        code: "SERVER_BUSY",
+        status: 503,
+        description: "The server is currently at capacity. Please retry shortly.",
+        doc_URL: "",
+        request_ID: "String"
+    },
 }
 
 // Helper function
