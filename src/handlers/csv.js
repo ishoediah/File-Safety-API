@@ -2,7 +2,7 @@ import { parse } from 'csv-parse/sync'
 import { stringify } from 'csv-stringify/sync'
 import { formulaInjectionTriggers } from '../config/constants.js'
 
-const CSV_MAX_ROWS = 25000
+const CSV_MAX_ROWS = 30000
 
 function sanitizeCsv(buffer) {
 

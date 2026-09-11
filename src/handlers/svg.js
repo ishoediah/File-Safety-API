@@ -1,8 +1,8 @@
-import DOMPurify from 'isomorphic-dompurify'
+import DOMPurify, { clearWindow } from 'isomorphic-dompurify'
 import {blockedSVGTags, blockedSVGAttributes} from '../config/constants.js'
 
 const SVG_MAX_SIZE = 5 * 1024 * 1024
-const SVG_MAX_ELEMENTS = 5000
+const SVG_MAX_ELEMENTS = 2000
 
 function sanitizeSvg(buffer) {
     const findings  = []
@@ -35,6 +35,8 @@ function sanitizeSvg(buffer) {
         }
     } catch(err) {
         return { sanitized : null, findings, error: true}
+    } finally {
+        clearWindow() // release the jsdom/DOM heap to prevent the leak
     }
 
     return {sanitized, findings}
