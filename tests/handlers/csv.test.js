@@ -20,22 +20,29 @@ describe('sanitizeCsv', () => {
   })
 
   it('Handles a malformed CSV without crashing', () => {
-  // ragged rows + blank lines — the kind of mess real files have
-  const messy = 'a,b,c\n1,2\n3,4,5,6\n\n\n7,8,9'
-  const buffer = Buffer.from(messy)
-  const result = sanitizeCsv(buffer)
+    // ragged rows + blank lines — the kind of mess real files have
+    const messy = 'a,b,c\n1,2\n3,4,5,6\n\n\n7,8,9'
+    const buffer = Buffer.from(messy)
+    const result = sanitizeCsv(buffer)
 
-  // it should NOT crash, and should return a valid result (not the error shape)
-  expect(result.error).toBeFalsy()
-  expect(result.sanitized).not.toBe(null)
+    // it should NOT crash, and should return a valid result (not the error shape)
+    expect(result.error).toBeFalsy()
+    expect(result.sanitized).not.toBe(null)
   })
 
   it('Returns error shape when parsing genuinely fails', () => {
-  // a malformed quoted field that the parser cannot recover from
-  const broken = 'a,"b\n"unterminated" quote"mess,c'
-  const buffer = Buffer.from(broken)
-  const result = sanitizeCsv(buffer)
-  // if it errors, it should return the standard error shape
+    // a malformed quoted field that the parser cannot recover from
+    const broken = 'a,"b\n"unterminated" quote"mess,c'
+    const buffer = Buffer.from(broken)
+    const result = sanitizeCsv(buffer)
+    // if it errors, it should return the standard error shape
   expect(result.error).toBe(true)
+  })
+
+  it('rejects a CSV with too many rows', () => {
+    const bigCsv = readFileSync('test-fixtures/large-csv.csv')
+    const result = sanitizeCsv(bigCsv)
+    expect(result.error).toBe(true)
+    expect(result.reason).toBe('csv_too_complex')
   })
 })

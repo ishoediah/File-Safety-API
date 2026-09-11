@@ -1,6 +1,7 @@
 import { describe, it, expect } from 'vitest'
-import { readFileSync } from 'node:fs'
+import { read, readFileSync } from 'node:fs'
 import { sanitizeSvg } from '../../src/handlers/svg.js'
+import { readFileSync } from 'node:fs'
 
 describe('sanitizeSvg', () => {
 
@@ -45,4 +46,18 @@ describe('sanitizeSvg', () => {
     expect(result.error).toBeFalsy()
   })
 
+
+  it('rejects an SVG with too many elements', () => {
+    const svg = readFileSync('test-fixtures/large-svg.svg')
+    const result = sanitizeSvg(svg)
+    expect(result.error).toBe(true)
+    expect(result.reason).toBe('svg_too_complex')
+  })
+
+  it('rejects an SVG over the size limit', () => {
+    const svg = readFileSync('test-fixtures/svg-test-oversized.svg')
+    const result = sanitizeSvg(svg)
+    expect(result.error).toBe(true)
+    expect(result.reason).toBe('too_large')
+  })
 })

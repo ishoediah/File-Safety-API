@@ -168,4 +168,24 @@ describe('POST /v1/sanitize (mocked DB — full pipeline)', () => {
     expect(logRequest).toHaveBeenCalledOnce()
   })
 
+  it('Rejects a wrong proxy secret with INVALID_PROXY_SECRET (403)', async () => {
+    process.env.RAPIDAPI_PROXY_SECRET = 'the-real-secret'
+
+    const form = new FormData()
+    const fileBuffer = readFileSync('test-fixtures/Sample-png.png')
+    form.append('file', new Blob([fileBuffer]), 'Sample-png.png')
+
+    const res = await app.request('/v1/sanitize', {
+        method: 'POST',
+        headers: { 'X-RapidAPI-Proxy-Secret': 'the-WRONG-secret' },
+        body: form
+    })
+
+    expect(res.status).toBe(403)
+    const data = await res.json()
+    expect(data.code).toBe('INVALID_PROXY_SECRET')
+    // wrong proxy secret should NOT fall through to key lookup
+    expect(hashedKeyLookup).not.toHaveBeenCalled()
+  })
+
 })
