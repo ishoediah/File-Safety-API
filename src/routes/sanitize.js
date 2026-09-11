@@ -6,6 +6,7 @@ import { sanitizeImage } from "../handlers/image.js";
 import { sanitizeSvg } from "../handlers/svg.js";
 import { scoreFindings } from "../core/scorer.js";
 import { logRequest } from "../db/requestLog.js";
+import { limit, hasCapacity } from "../core/limiter.js"
 
 const timeOutMS = 15000
 
@@ -16,6 +17,10 @@ function timeOut(ms) {
 }
 
 export const sanitize = async(c) => {
+
+    if ( !hasCapacity()) {
+        return returnError(c, errors.SERVER_BUSY)
+    }
 
     try {
     const customer = c.get('customer')
@@ -40,7 +45,7 @@ export const sanitize = async(c) => {
     const handlerFunction = handlerFunctions[handler]
     
     const result = await Promise.race([
-        handlerFunction(buffer),
+        limit( ()=> handlerFunction(buffer)),
         timeOut(timeOutMS)
     ])
 
