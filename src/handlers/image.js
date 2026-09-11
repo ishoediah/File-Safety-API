@@ -14,7 +14,7 @@ async function sanitizeImage(buffer) {
         const metadata = await sharp(buffer, { limitInputPixels: pixelLimit }).metadata()
 
         if(metadata.width && metadata.height && metadata.width * metadata.height > pixelLimit) {
-                    return { sanitized: null, findings, error: true, reason: "too_large"}
+                    return { sanitized: null, findings, error: true, reason: "image_too_complex"}
         }
 
         if(metadata.exif) {
@@ -35,7 +35,7 @@ async function sanitizeImage(buffer) {
             return { sanitized: null, findings, error: true, reason: 'timeout' }
         }
         if(err.message && err.message.toLowerCase().includes('pixel')){
-            return { sanitized: null, findings, error: true, reason: 'too_large' } 
+            return { sanitized: null, findings, error: true, reason: 'image_too_complex' } 
         }
         return { sanitized: null, findings, error: true}
     }

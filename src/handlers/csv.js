@@ -2,13 +2,21 @@ import { parse } from 'csv-parse/sync'
 import { stringify } from 'csv-stringify/sync'
 import { formulaInjectionTriggers } from '../config/constants.js'
 
+const CSV_MAX_ROWS = 25000
+
 function sanitizeCsv(buffer) {
+
+    const text = buffer.toString('utf-8')
+
+    const rowCount = (text.match(/\n/g) || []).length
+    if (rowCount > CSV_MAX_ROWS) {
+        return { sanitized: null, findings: [], error: true, reason: 'csv_too_complex' }
+    }
 
     const findings = []
     let sanitized
     try {
     // first turn the buffer into text, then parse into rows of cells
-    const text = buffer.toString('utf-8')
     const rows = parse(text, { //added a strictness relaxer to handel rows with varying number of columns and blank lines
        relax_column_count: true,
        skip_empty_lines: true

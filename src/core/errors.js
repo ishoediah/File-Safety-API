@@ -90,10 +90,26 @@ const errors = {
         request_ID: "String"
     },
 
-    IMAGE_TOO_LARGE : {
-        code:"IMAGE_TOO_LARGE",
-        status: 413,
+    IMAGE_TOO_COMPLEX : {
+        code:"IMAGE_TOO_COMPLEX",
+        status: 422,
         description: "Image exceeds the maximum allowed dimensions",
+        doc_URL: "",
+        request_ID: "String"
+    },
+
+    CSV_TOO_COMPLEX : {
+        code:"CSV_TOO_COMPLEX",
+        status: 422,
+        description: "Csv exceeds the maximum allowed lines",
+        doc_URL: "",
+        request_ID: "String"
+    },
+
+    SVG_TOO_COMPLEX : {
+        code:"SVG_TOO_COMPLEX",
+        status: 422,
+        description: "Svg exceeds the maximum allowed elements",
         doc_URL: "",
         request_ID: "String"
     },

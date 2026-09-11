@@ -11,7 +11,7 @@ const timeOutMS = 15000
 
 function timeOut(ms) {
     return new Promise((_, reject) => {
-        setTimeout(()=> reject(new Error('Pipeline Timeout')), timeOutMS)
+        setTimeout(()=> reject(new Error('Pipeline Timeout')), ms)
     })
 }
 
@@ -45,11 +45,20 @@ export const sanitize = async(c) => {
     ])
 
     if (result.error) {
-        if (result.reason === 'too_large') {
-            return returnError(c, errors.IMAGE_TOO_LARGE)
-        }
         if (result.reason === 'timeout') {
             return returnError(c, errors.PROCESSING_TIMEOUT)
+        }
+        if (result.reason === 'too_large') {
+            return returnError(c, errors.FILE_TOO_LARGE)
+        }
+        if (result.reason === 'image_too_complex') {
+            return returnError(c, errors.IMAGE_TOO_COMPLEX)
+        }
+        if (result.reason === 'csv_too_complex') {
+            return returnError(c, errors.CSV_TOO_COMPLEX)
+        }
+        if (result.reason === 'svg_too_complex') {
+            return returnError(c, errors.SVG_TOO_COMPLEX)
         }
         return returnError(c, errors.INTERNAL_SERVER_ERROR)
     }
@@ -66,6 +75,9 @@ export const sanitize = async(c) => {
         announcements: null   // reserved for future product notifications ( will be used when dirreclty selling the api)
     })
     } catch(err) {
+        if (err.message === 'Pipeline Timeout') {
+        return returnError(c, errors.PROCESSING_TIMEOUT)
+    }
         return returnError(c, errors.INTERNAL_SERVER_ERROR)
     }
 }
