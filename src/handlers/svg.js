@@ -1,4 +1,5 @@
-import DOMPurify, { clearWindow } from 'isomorphic-dompurify'
+import { JSDOM } from 'jsdom'
+import createDOMPurify from 'dompurify'
 import {blockedSVGTags, blockedSVGAttributes} from '../config/constants.js'
 
 const SVG_MAX_SIZE = 5 * 1024 * 1024
@@ -19,7 +20,12 @@ function sanitizeSvg(buffer) {
         return { sanitized: null, findings : [], error: true, reason : 'svg_too_complex'}
     }
 
+    let window
+
     try {
+        // Isloated jsdom window + DOMpurify instance for this call only
+        window = new JSDOM('<!DOCTYPE html>').window
+        const DOMPurify = createDOMPurify(window)
         const clean = DOMPurify.sanitize(svgString, {
             USE_PROFILES: { svg: true, svgFilters: true},
             FORBID_TAGS: blockedSVGTags,
@@ -36,7 +42,7 @@ function sanitizeSvg(buffer) {
     } catch(err) {
         return { sanitized : null, findings, error: true}
     } finally {
-        clearWindow() // release the jsdom/DOM heap to prevent the leak
+        if(window) window.close() // release the jsdom/DOM heap to prevent the leak
     }
 
     return {sanitized, findings}
