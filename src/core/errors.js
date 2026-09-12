@@ -7,7 +7,7 @@ const errors = {
         status: 404, 
         description: "Route not found", 
         doc_URL: "",
-        request_ID: "String"
+        request_ID: ""
     },
 
    //Internal Error
@@ -17,7 +17,7 @@ const errors = {
         status: 500, 
         description: "Internal Server Error", 
         doc_URL: "", 
-        request_ID: "String"
+        request_ID: ""
     },
 
    // Authentication errors
@@ -27,7 +27,7 @@ const errors = {
         status: 401, 
         description: "Missing API key, no auth provided", 
         doc_URL: "", 
-        request_ID: "String"
+        request_ID: ""
     },
 
     INVALID_API_KEY : {
@@ -35,7 +35,7 @@ const errors = {
         status: 401,
         description: "Invalid API key, not found or revoked",
         doc_URL: "",
-        request_ID: "String"
+        request_ID: ""
     },
 
     INVALID_PROXY_SECRET : {
@@ -43,7 +43,7 @@ const errors = {
         status: 403,
         description: "Bad Proxy Request",
         doc_URL: "",
-        request_ID: "String"
+        request_ID: ""
     },
 
     // Rate/Usage errors
@@ -53,7 +53,7 @@ const errors = {
         status: 429,
         description: "Over monthly limit, too many requests",
         doc_URL: "",
-        request_ID: "String"
+        request_ID: ""
     },
 
     OVER_SECONDLY_LIMIT : {
@@ -61,7 +61,7 @@ const errors = {
         status: 429,
         description: "Too many requests per second",
         doc_URL: "",
-        request_ID: "String"
+        request_ID: ""
     },
     
     // File errors
@@ -71,7 +71,7 @@ const errors = {
         status: 400,
         description: "Bad request, no file provided",
         doc_URL: "",
-        request_ID: "String"
+        request_ID: ""
     },
 
     FILE_TOO_LARGE : {
@@ -79,7 +79,7 @@ const errors = {
         status: 413,
         description: "Payload size too large",
         doc_URL: "",
-        request_ID: "String"
+        request_ID: ""
     },
 
     UNSUPPORTED_FILE_TYPE : {
@@ -87,7 +87,7 @@ const errors = {
         status: 415,
         description: "Unsupported Media Type",
         doc_URL: "",
-        request_ID: "String"
+        request_ID: ""
     },
 
     IMAGE_TOO_COMPLEX : {
@@ -95,7 +95,7 @@ const errors = {
         status: 422,
         description: "Image exceeds the maximum allowed dimensions",
         doc_URL: "",
-        request_ID: "String"
+        request_ID: ""
     },
 
     CSV_TOO_COMPLEX : {
@@ -103,7 +103,7 @@ const errors = {
         status: 422,
         description: "Csv exceeds the maximum allowed lines",
         doc_URL: "",
-        request_ID: "String"
+        request_ID: ""
     },
 
     SVG_TOO_COMPLEX : {
@@ -111,7 +111,7 @@ const errors = {
         status: 422,
         description: "Svg exceeds the maximum allowed elements",
         doc_URL: "",
-        request_ID: "String"
+        request_ID: ""
     },
 
     PROCESSING_TIMEOUT : {
@@ -119,7 +119,7 @@ const errors = {
         status: 408,
         description: "File processing exceeded the maximum allowed time",
         doc_URL: "",
-        request_ID: "String"
+        request_ID: ""
     },
 
     SERVER_BUSY : {
@@ -127,7 +127,7 @@ const errors = {
         status: 503,
         description: "The server is currently at capacity. Please retry shortly.",
         doc_URL: "",
-        request_ID: "String"
+        request_ID: ""
     },
 }
 
