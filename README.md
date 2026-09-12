@@ -142,7 +142,7 @@ The API enforces limits before processing; requests exceeding them are rejected 
 | File size (general) | 10 MB | Images, CSV |
 | File size (SVG) | 5 MB | SVG |
 | Image dimensions | 24 megapixels | Images |
-| CSV rows | 25,000 | CSV |
+| CSV rows | 30,000 | CSV |
 | SVG elements | 5,000 | SVG |
 | Processing time | 15 s | All |
 
