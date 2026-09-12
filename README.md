@@ -50,6 +50,7 @@ request
   → fileGuard     (checks the file is present and within the size limit)
   → detectType    (reads magic bytes to find the true file type — catches spoofing)
   → router        (routes the detected type to the correct handler)
+    → limiter  (caps concurrent sanitizations; returns 503 when saturated)
   → handler       (image / csv / svg — performs the actual sanitization)
   → scorer        (assigns a risk level from the findings)
   → response      (returns the cleaned file, base64-encoded, plus the safety report)
@@ -65,7 +66,7 @@ Detection is content-based, not extension-based: a `.jpg` that is actually a PNG
 - **Web framework:** [Hono](https://hono.dev/) with `@hono/node-server`
 - **Database:** Supabase (PostgreSQL) — API keys (hashed), usage counts, and request metadata
 - **Image processing:** [sharp](https://sharp.pixelplumbing.com/) (libvips) — re-encoding to strip metadata
-- **SVG sanitization:** [DOMPurify](https://github.com/cure53/DOMPurify) via `isomorphic-dompurify`
+- **SVG sanitization:** [DOMPurify](https://github.com/cure53/DOMPurify) with [jsdom](https://github.com/jsdom/jsdom)
 - **File-type detection:** [`file-type`](https://github.com/sindresorhus/file-type) (magic bytes)
 - **CSV parsing:** `csv-parse` / `csv-stringify`
 - **Testing:** [Vitest](https://vitest.dev/)
@@ -130,8 +131,50 @@ with open("clean.jpg", "wb") as f:
 ### Other endpoints
 
 - `GET /v1/health` — public health check; returns `{ "status": "ok", "DB": "online" }`.
-- `GET /v1/usage` — returns the caller's current-month usage, plan, and remaining calls. This is intended for **direct customers** (who have their own record in the database). Marketplace subscribers track usage through the marketplace dashboard instead, so this endpoint is not exposed on the marketplace listing.
-- `GET /v1/usage` — returns the caller's current month usage, plan, and remaining calls. This is intended for **direct** customers (who have a record in the database); marketplace customers track usage through the marketplace dashboard instead.
+- `GET /v1/usage` — returns the caller's current-month usage, plan, and remaining calls. This is intended for _direct customers_ (who have their own record in the database). Marketplace subscribers track usage through the marketplace dashboard instead, so this endpoint is not exposed on the marketplace listing.
+
+## Limits
+
+The API enforces limits before processing; requests exceeding them are rejected with a clear error rather than being processed. These limits exist to protect the **host server** from being overwhelmed (memory/CPU exhaustion under load) — they are an infrastructure safeguard, not a client-side security feature. This service does not claim to detect or protect against decompression-bomb or resource-exhaustion attacks aimed at the client.
+
+| Limit | Value | Applies to |
+|-------|-------|------------|
+| File size (general) | 10 MB | Images, CSV |
+| File size (SVG) | 5 MB | SVG |
+| Image dimensions | 24 megapixels | Images |
+| CSV rows | 25,000 | CSV |
+| SVG elements | 5,000 | SVG |
+| Processing time | 15 s | All |
+
+Concurrent processing is also capped to keep memory bounded under load.
+
+## Errors
+
+Errors are returned as consistent JSON with a stable, machine-readable `code`:
+
+```json
+{
+  "code": "SVG_TOO_COMPLEX",
+  "status": 422,
+  "description": "Svg exceeds the maximum allowed elements",
+  "doc_URL": "",
+  "request_ID": ""
+}
+```
+
+| Code | Status | Meaning |
+|------|--------|---------|
+| `NO_FILE_PROVIDED` | 400 | No file was included in the request. |
+| `MISSING_API_KEY` / `INVALID_API_KEY` | 401 | The API key is missing or not recognized. |
+| `FILE_TOO_LARGE` | 413 | The file exceeds the size limit. |
+| `UNSUPPORTED_FILE_TYPE` | 415 | The file type is not supported. |
+| `IMAGE_TOO_COMPLEX` | 422 | The image exceeds the pixel-dimension limit. |
+| `CSV_TOO_COMPLEX` | 422 | The CSV exceeds the row limit. |
+| `SVG_TOO_COMPLEX` | 422 | The SVG exceeds the element limit. |
+| `PROCESSING_TIMEOUT` | 408 | Processing exceeded the allowed time. |
+| `OVER_MONTHLY_LIMIT` | 429 | Plan's monthly call limit exceeded. |
+| `SERVER_BUSY` | 503 | The server is at capacity; retry shortly. |
+| `INTERNAL_SERVER_ERROR` | 500 | An unexpected error occurred. |
 
 ---
 
@@ -162,40 +205,6 @@ src/
 tests/                     # Vitest suites mirroring src/
 test-fixtures/             # sample files (including a spoofed-type fixture)
 ```
-
----
-
-## Following the flow through the code
-
-If you want to trace a request through the codebase, here's what each file does, in the order a request touches them:
-
-1. **`src/index.js`** — assembles the Hono app and wires each route to exactly the middleware it needs. Health is public; usage needs auth; sanitize runs the full middleware stack. This is the map of the whole API.
-
-2. **`src/middleware/auth.js`** — identifies the caller. If the request carries the marketplace proxy secret, it's flagged as marketplace traffic and passed through. Otherwise the API key is hashed and looked up in the database, and the customer record is attached to the request.
-
-3. **`src/middleware/rateLimit.js`** — for direct customers, checks their monthly usage against their plan limit and increments the count. Marketplace traffic skips this (the marketplace enforces its own limits).
-
-4. **`src/middleware/fileGuard.js`** — confirms a file is actually present and within the size limit before any work begins.
-
-5. **`src/core/detectType.js`** — reads the file's magic bytes to determine its true type. Binary formats are identified by signature; text formats (CSV, SVG) fall back to content inspection. This is what catches spoofed extensions.
-
-6. **`src/core/router.js`** — a small lookup that maps the detected type to the handler that should process it (`image`, `csv`, or `svg`), or signals "unsupported."
-
-7. **`src/handlers/*.js`** — the actual sanitization:
-   - `image.js` reads the metadata, records what it finds, then re-encodes with sharp to strip it.
-   - `csv.js` parses the rows and prefixes any formula-triggering cell with an apostrophe.
-   - `svg.js` runs the markup through DOMPurify, removing scripts, handlers, and external references.
-   Each returns the same shape: `{ sanitized, findings }` (or an error flag on failure).
-
-8. **`src/core/scorer.js`** — reads the findings' categories and returns the highest severity as the overall risk level.
-
-9. **`src/routes/sanitize.js`** — orchestrates all of the above: file → buffer → detect → route → handle → score → base64-encode → respond, with logging and a top-level try/catch so any unexpected failure returns a clean error instead of crashing.
-
-10. **`src/db/*.js`** — the Supabase layer: the client, key lookup/hashing, usage counters, and best-effort request logging (metadata only).
-
-11. **`src/core/errors.js`** — a single catalog of every error (code, HTTP status, description) plus a helper that returns them consistently.
-
-Reading those files in that order is the quickest way to understand the whole system.
 
 ---
 
@@ -249,10 +258,11 @@ See [**loadTest/LOADTEST.md**](./loadTest/LOADTEST.md) for the full methodology,
 
 ## Security notes
 
-- API keys are stored **hashed** (SHA-256); raw keys are never persisted. This applies to direct customers; marketplace traffic is authenticated by a proxy secret instead and is never looked up or stored in the key table. This applies to **direct** customers, whose keys live in the database. **Marketplace traffic skips key storage entirely** — the marketplace issues and manages those keys, and the API authenticates that traffic with a shared proxy secret instead.
+- API keys are stored **hashed** (SHA-256); raw keys are never persisted. This applies to direct customers; marketplace traffic is authenticated by a proxy secret instead and is never looked up or stored in the key table.  Marketplace traffic skips key storage entirely, the marketplace issues and manages those keys, and the API authenticates that traffic with a shared proxy secret instead.
 - `sharp` is pinned to a patched version with the vulnerable TIFF/VIPS loaders blocked, since the service processes untrusted image input.
 - Only file **metadata** is logged (type, risk level, timestamp) — never file contents, IP addresses, or personal data — and logs are purged after 90 days.
 - Dependabot is enabled for automated security updates.
+- Size, dimension, and complexity limits, plus a global concurrency cap. This enforces, but not automatically protects against decompression bombs, resource-exhaustion attacks, and memory exhaustion under load.
 
 ---
 
@@ -294,7 +304,7 @@ npm run test:unit # unit tests only (no database needed)
 To start the server locally:
 
 ```bash
-npm node src/index.js
+node src/index.js
 ```
 
 ---
