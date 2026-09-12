@@ -188,7 +188,7 @@ sharp decodes images into raw pixels, which is memory-intensive, and it uses nat
 
 ### CSV — CPU-bound and event-loop-blocking
 
-Parsing a 50,000-row CSV is CPU-heavy **and synchronous**, so under concurrency it jammed Node's single-threaded event loop. Memory stayed modest, but latency climbed past 30 seconds and the server began resetting connections. A synchronous operation like this can't be interrupted mid-parse, so a timeout can't rescue it — the fix is to limit concurrency and cap input size.
+Parsing a 50,000-row CSV is CPU-heavy and synchronous, so under concurrency it jammed Node's single-threaded event loop. Memory stayed modest, but latency climbed past 30 seconds and the server began resetting connections. A synchronous operation like this can't be interrupted mid-parse, so a timeout can't rescue it — the fix is to limit concurrency and cap input size.
 
 ### SVG — the worst case: an out-of-memory crash
 
@@ -207,14 +207,52 @@ Allocation failed - JavaScript heap out of memory
 The entire Node process crashed — not just one failed request. Every subsequent request got "connection refused" because the server was dead. This is also a denial-of-service surface: a small but complex SVG could deliberately crash the service.
 
 
-## What this changed, The fix
+## Tracking down the SVG crash
+ 
+The SVG crash looked at first like a concurrency problem, so I tried the obvious concurrency-oriented fixes: a global concurrency limiter, then a dedicated low-concurrency limiter just for SVG, then progressively tighter per-request element caps. These didnt seem to work. Even with only a couple of SVGs processing at once, memory still marched to ~4 GB.
+ 
+That ruled out concurrency as the root cause, so I isolated the sanitizer completely — a plain loop calling the SVG handler sequentially, one file at a time, with no server, no k6, and no concurrency, running under `node --expose-gc` with a forced garbage collection after every call:
+ 
+```
+0:   RSS 201 MB   Heap 62 MB
+20:  RSS 681 MB   Heap 495 MB
+40:  RSS 1124 MB  Heap 926 MB
+...
+140: RSS 3344 MB  Heap 3082 MB
+FATAL ERROR: JavaScript heap out of memory
+```
+ 
+Memory grew by a steady ~22 MB per call and was never reclaimed, even with GC forced after every single call. That is the signature of a _hard memory leak_ : the memory wasn't merely uncollected, it was unreclaimable, because something retained a reference to each parse. This wasn't concurrency, the server, or the test harness, it was the sanitization itself leaking on every call.
+ 
+The leak traced to **jsdom 29** (the DOM implementation DOMPurify uses under the hood to parse SVG). Upgrading to **jsdom 30** eliminated it.
+ 
+## The fix — before and after
 
-- **A global concurrency limiter** so only a bounded number of sanitizations run at once, with a short queue and a fast `503` when saturated — this caps peak memory regardless of traffic bursts (and, on usage-metered hosting, caps cost).
-- **Conservative file-size limits** per plan, since a single large file's in-memory footprint is far bigger than its bytes on disk.
-- **Image pixel and processing-time limits** (via sharp's `limitInputPixels` and `.timeout()`) to reject decompression-bomb images.
-- **SVG-specific limits** (tight size / complexity caps), because SVG is the highest-risk path and the concurrency limiter alone may not prevent a heap blow-up from concurrent large SVGs.
+![SVG memory after fix](./SVG-test-after-fix.png)
+ 
+![SVG memory: before vs. after](./SVG-Comparison-Before-And-After.png)
+ 
+With **jsdom 30**, the same SVG workload that previously climbed to a 4 GB crash now stays flat and bounded. Heap rises and is reclaimed by GC on every cycle, and RSS settles around 800 MB with 100% of requests succeeding:
+ 
+| SVG (realistic 4k-element file, 50 concurrent) | Before (jsdom 29) | After (jsdom 30 + limiter) |
+|---|---|---|
+| Peak RSS | ~4 GB then **crash** | **~800 MB, bounded** |
+| Success rate | process died | **100%** |
+| p95 latency | — | ~9-10 s (under the request timeout) |
+ 
+The upgrade fixed the root cause; the rest of the protections keep the whole pipeline bounded and predictable regardless of what gets thrown at it.
+ 
+## What this changed
+ 
+- **Upgraded jsdom (29 to 30)** — eliminated the per-call memory leak that was crashing SVG processing.
+- **A global concurrency limiter** so only a bounded number of sanitizations run at once, with a short queue and a fast `503` when saturated — this caps peak memory regardless of traffic bursts (and, on usage-metered hosting, caps cost). NOTE: The SVG specific limiter got removed. Only the global limkter is now used.
+- **Conservative file-size limits** per plan, since a file's in-memory footprint is far larger than its bytes on disk.
+- **Image pixel and processing-time limits** (sharp's `limitInputPixels` and `.timeout()`) to reject decompression-bomb images.
 - **CSV-specific limits** (row-count and size caps), rejecting oversized spreadsheets before the synchronous parse can block the event loop.
-
+- **SVG-specific limits** (element-count and size caps), rejecting overly complex vector files before they reach the DOM parser.
+Each protection has a distinct, machine-readable error (`IMAGE_TOO_COMPLEX`, `CSV_TOO_COMPLEX`, `SVG_TOO_COMPLEX`, `FILE_TOO_LARGE`, `PROCESSING_TIMEOUT`, `SERVER_BUSY`) and is covered by automated tests.
+ 
 ## Takeaway
-
-Testing each file type separately mattered: the three paths (native image processing, synchronous CSV parsing, in-heap DOM sanitization) fail in completely different ways, and only the SVG path actually crashed the process. Load testing was necessary and proved that the fixes were needed.
+ 
+Testing each file type separately mattered. The three paths fail in completely different ways, and only SVG actually crashed the process. And the crash's real cause wasn't the obvious one: it looked like a concurrency problem but was a library memory leak, which only a controlled, isolated, sequential test could prove. Load testing before launch turned a latent, crash-level bug into a diagnosed root cause and a set of concrete, tested safeguards.
+ 
