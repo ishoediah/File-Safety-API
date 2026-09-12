@@ -22,12 +22,12 @@
       "description": "File sanitization operations"
     },
     {
-      "name": "Account",
-      "description": "Usage and account information"
-    },
-    {
       "name": "System",
       "description": "Service health"
+    },
+    {
+      "name": "Account",
+      "description": "Usage and account information"
     }
   ],
   "paths": {
@@ -37,7 +37,7 @@
           "Sanitization"
         ],
         "summary": "Sanitize a file",
-        "description": "Upload a file to be sanitized. The API detects the true file type from its content, routes it to the appropriate sanitizer, removes dangerous content, and returns the cleaned file (base64-encoded) along with a risk assessment and a list of findings describing what was removed or neutralized.\n\nFor images, this includes stripping GPS/location metadata and all other hidden EXIF/XMP data. Supported types: JPEG, PNG, WebP, GIF, CSV, and SVG.",
+        "description": "Upload a file to be sanitized. The API detects the true file type from its content, routes it to the appropriate sanitizer, removes dangerous content, and returns the cleaned file (base64-encoded) along with a risk assessment and a list of findings describing what was removed or neutralized.\n\nFor images, this includes stripping GPS/location metadata and all other hidden EXIF/XMP data. Supported types: JPEG, PNG, WebP, GIF, CSV, and SVG.\n\nThe returned `sanitizedFile` is base64-encoded. Decode it to recover the cleaned file (e.g. Node.js `Buffer.from(sanitizedFile, 'base64')`, Python `base64.b64decode(sanitizedFile)`, or browser `atob(sanitizedFile)` into a Blob).",
         "operationId": "sanitizeFile",
         "security": [
           {
@@ -128,8 +128,25 @@
               }
             }
           },
+          "408": {
+            "description": "Processing exceeded the maximum allowed time.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                },
+                "example": {
+                  "code": "PROCESSING_TIMEOUT",
+                  "status": 408,
+                  "description": "File processing exceeded the maximum allowed time",
+                  "doc_URL": "",
+                  "request_ID": ""
+                }
+              }
+            }
+          },
           "413": {
-            "description": "The uploaded file exceeds your plan's size limit.",
+            "description": "The uploaded file exceeds the maximum allowed size.",
             "content": {
               "application/json": {
                 "schema": {
@@ -138,7 +155,7 @@
                 "example": {
                   "code": "FILE_TOO_LARGE",
                   "status": 413,
-                  "description": "The uploaded file exceeds your plan's size limit.",
+                  "description": "Payload size too large",
                   "doc_URL": "",
                   "request_ID": ""
                 }
@@ -156,6 +173,23 @@
                   "code": "UNSUPPORTED_FILE_TYPE",
                   "status": 415,
                   "description": "The file type is not supported. Supported types: JPEG, PNG, WebP, GIF, CSV, SVG.",
+                  "doc_URL": "",
+                  "request_ID": ""
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "The file exceeds a complexity limit. Returns IMAGE_TOO_COMPLEX (image pixel dimensions), CSV_TOO_COMPLEX (CSV rows), or SVG_TOO_COMPLEX (SVG elements) depending on the file type.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                },
+                "example": {
+                  "code": "SVG_TOO_COMPLEX",
+                  "status": 422,
+                  "description": "Svg exceeds the maximum allowed elements",
                   "doc_URL": "",
                   "request_ID": ""
                 }
@@ -195,6 +229,23 @@
                 }
               }
             }
+          },
+          "503": {
+            "description": "The server is currently at capacity. Retry shortly.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                },
+                "example": {
+                  "code": "SERVER_BUSY",
+                  "status": 503,
+                  "description": "The server is currently at capacity. Please retry shortly.",
+                  "doc_URL": "",
+                  "request_ID": ""
+                }
+              }
+            }
           }
         }
       }
@@ -205,7 +256,7 @@
           "Account"
         ],
         "summary": "Get current usage",
-        "description": "Returns your current month's usage, plan, monthly limit, and remaining calls. This endpoint does not count against your rate limit.",
+        "description": "Returns your current month's usage, plan, monthly limit, and remaining calls. This endpoint does not count against your rate limit. Intended for direct customers.",
         "operationId": "getUsage",
         "security": [
           {
@@ -231,7 +282,7 @@
             }
           },
           "401": {
-            "description": "Missing or invalid API key. Returns code MISSING_API_KEY when no key is provided, or INVALID_API_KEY when the key is not recognized.",
+            "description": "Missing or invalid API key.",
             "content": {
               "application/json": {
                 "schema": {
@@ -248,7 +299,7 @@
             }
           },
           "500": {
-            "description": "Internal Server Error",
+            "description": "An internal error occurred.",
             "content": {
               "application/json": {
                 "schema": {
@@ -371,7 +422,7 @@
           },
           "sanitizedFile": {
             "type": "string",
-            "description": "The sanitized file, base64-encoded. Decode this to obtain the cleaned file.",
+            "description": "The sanitized file, base64-encoded. Decode it back into the original binary file. Node.js: Buffer.from(sanitizedFile, 'base64'). Python: base64.b64decode(sanitizedFile). Browser: atob(sanitizedFile) then build a Uint8Array/Blob.",
             "example": "/9j/4AAQSkZJRgABAQ..."
           },
           "announcements": {
@@ -419,36 +470,6 @@
           }
         }
       },
-      "UsageResponse": {
-        "type": "object",
-        "properties": {
-          "plan": {
-            "type": "string",
-            "description": "Your current plan.",
-            "example": "free"
-          },
-          "used": {
-            "type": "integer",
-            "description": "Number of calls used this month.",
-            "example": 47
-          },
-          "limit": {
-            "type": "integer",
-            "description": "Your monthly call limit.",
-            "example": 100
-          },
-          "remaining": {
-            "type": "integer",
-            "description": "Calls remaining this month.",
-            "example": 53
-          },
-          "month": {
-            "type": "string",
-            "description": "The current billing month in YYYY-MM format.",
-            "example": "2026-06"
-          }
-        }
-      },
       "Error": {
         "type": "object",
         "properties": {
@@ -476,6 +497,36 @@
             "type": "string",
             "description": "A unique identifier for this request, useful for support.",
             "example": ""
+          }
+        }
+      },
+      "UsageResponse": {
+        "type": "object",
+        "properties": {
+          "plan": {
+            "type": "string",
+            "description": "Your current plan.",
+            "example": "free"
+          },
+          "used": {
+            "type": "integer",
+            "description": "Number of calls used this month.",
+            "example": 47
+          },
+          "limit": {
+            "type": "integer",
+            "description": "Your monthly call limit.",
+            "example": 100
+          },
+          "remaining": {
+            "type": "integer",
+            "description": "Calls remaining this month.",
+            "example": 53
+          },
+          "month": {
+            "type": "string",
+            "description": "The current billing month in YYYY-MM format.",
+            "example": "2026-06"
           }
         }
       }

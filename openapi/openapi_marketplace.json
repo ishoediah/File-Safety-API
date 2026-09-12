@@ -1,0 +1,433 @@
+{
+  "openapi": "3.0.3",
+  "info": {
+    "title": "File Safety API",
+    "version": "1.0.0",
+    "description": "Structural file sanitization API. Removes image metadata (EXIF/GPS/XMP), neutralizes CSV formula injection, and strips XSS vectors from SVG files. Detects the true file type from magic bytes to catch spoofing, returns a cleaned file plus a risk assessment.\n\n**Important behavioral notes:**\n- Files are processed in memory and never stored.\n- Image sanitization removes ALL embedded metadata, including GPS location data that can reveal where a photo was taken \u2014 protecting the privacy of the people and places in your uploads.\n- CSV formula-injection cells are neutralized by prefixing them with a single apostrophe (they display as text, never execute).\n- SVG sanitization removes ALL embedded links (`<a>` href/xlink:href) as a security measure, in addition to scripts, event handlers, and dangerous URIs.\n- Errors are returned as consistent JSON objects with a stable, machine-readable `code` field (e.g. `UNSUPPORTED_FILE_TYPE`, `FILE_TOO_LARGE`) that you can rely on for programmatic error handling.\n- The API is a structural sanitization layer. It is NOT antivirus and does not guarantee a file is free of all threats.",
+    "termsOfService": "https://ishoediah.github.io/File-Safety-API-Legal/terms.html",
+    "contact": {
+      "name": "File Safety API Support",
+      "email": "oeditishaan@gmail.com"
+    }
+  },
+  "servers": [
+    {
+      "url": "https://file-safety-api-production.up.railway.app",
+      "description": "Production Server"
+    }
+  ],
+  "tags": [
+    {
+      "name": "Sanitization",
+      "description": "File sanitization operations"
+    },
+    {
+      "name": "System",
+      "description": "Service health"
+    }
+  ],
+  "paths": {
+    "/v1/sanitize": {
+      "post": {
+        "tags": [
+          "Sanitization"
+        ],
+        "summary": "Sanitize a file",
+        "description": "Upload a file to be sanitized. The API detects the true file type from its content, routes it to the appropriate sanitizer, removes dangerous content, and returns the cleaned file (base64-encoded) along with a risk assessment and a list of findings describing what was removed or neutralized.\n\nFor images, this includes stripping GPS/location metadata and all other hidden EXIF/XMP data. Supported types: JPEG, PNG, WebP, GIF, CSV, and SVG.\n\nThe returned `sanitizedFile` is base64-encoded. Decode it to recover the cleaned file (e.g. Node.js `Buffer.from(sanitizedFile, 'base64')`, Python `base64.b64decode(sanitizedFile)`, or browser `atob(sanitizedFile)` into a Blob).",
+        "operationId": "sanitizeFile",
+        "security": [
+          {
+            "ApiKeyAuth": []
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "multipart/form-data": {
+              "schema": {
+                "type": "object",
+                "required": [
+                  "file"
+                ],
+                "properties": {
+                  "file": {
+                    "type": "string",
+                    "format": "binary",
+                    "description": "The file to sanitize. Must be one of the supported types and within your plan's size limit."
+                  }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "File sanitized successfully.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/SanitizeResponse"
+                },
+                "example": {
+                  "detectedType": "image/jpeg",
+                  "riskLevel": "LOW",
+                  "findingsCount": 2,
+                  "findings": [
+                    {
+                      "type": "exif",
+                      "category": "metadata",
+                      "action": "removed EXIF metadata"
+                    },
+                    {
+                      "type": "xmp",
+                      "category": "metadata",
+                      "action": "removed XMP metadata"
+                    }
+                  ],
+                  "sanitizedFile": "/9j/4AAQSkZJRgABAQEASABIAAD...",
+                  "announcements": null
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "No file was provided in the request.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                },
+                "example": {
+                  "code": "NO_FILE_PROVIDED",
+                  "status": 400,
+                  "description": "No file was provided in the request.",
+                  "doc_URL": "",
+                  "request_ID": ""
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Missing or invalid API key. Returns code MISSING_API_KEY when no key is provided, or INVALID_API_KEY when the key is not recognized.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                },
+                "example": {
+                  "code": "INVALID_API_KEY",
+                  "status": 401,
+                  "description": "The provided API key is missing or invalid.",
+                  "doc_URL": "",
+                  "request_ID": ""
+                }
+              }
+            }
+          },
+          "408": {
+            "description": "Processing exceeded the maximum allowed time.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                },
+                "example": {
+                  "code": "PROCESSING_TIMEOUT",
+                  "status": 408,
+                  "description": "File processing exceeded the maximum allowed time",
+                  "doc_URL": "",
+                  "request_ID": ""
+                }
+              }
+            }
+          },
+          "413": {
+            "description": "The uploaded file exceeds the maximum allowed size.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                },
+                "example": {
+                  "code": "FILE_TOO_LARGE",
+                  "status": 413,
+                  "description": "Payload size too large",
+                  "doc_URL": "",
+                  "request_ID": ""
+                }
+              }
+            }
+          },
+          "415": {
+            "description": "The file type is not supported.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                },
+                "example": {
+                  "code": "UNSUPPORTED_FILE_TYPE",
+                  "status": 415,
+                  "description": "The file type is not supported. Supported types: JPEG, PNG, WebP, GIF, CSV, SVG.",
+                  "doc_URL": "",
+                  "request_ID": ""
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "The file exceeds a complexity limit. Returns IMAGE_TOO_COMPLEX (image pixel dimensions), CSV_TOO_COMPLEX (CSV rows), or SVG_TOO_COMPLEX (SVG elements) depending on the file type.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                },
+                "example": {
+                  "code": "SVG_TOO_COMPLEX",
+                  "status": 422,
+                  "description": "Svg exceeds the maximum allowed elements",
+                  "doc_URL": "",
+                  "request_ID": ""
+                }
+              }
+            }
+          },
+          "429": {
+            "description": "You have exceeded your plan's monthly call limit.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                },
+                "example": {
+                  "code": "OVER_MONTHLY_LIMIT",
+                  "status": 429,
+                  "description": "You have exceeded your plan's monthly call limit.",
+                  "doc_URL": "",
+                  "request_ID": ""
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "Internal Server Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                },
+                "example": {
+                  "code": "INTERNAL_SERVER_ERROR",
+                  "status": 500,
+                  "description": "Internal Server Error",
+                  "doc_URL": "",
+                  "request_ID": ""
+                }
+              }
+            }
+          },
+          "503": {
+            "description": "The server is currently at capacity. Retry shortly.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                },
+                "example": {
+                  "code": "SERVER_BUSY",
+                  "status": 503,
+                  "description": "The server is currently at capacity. Please retry shortly.",
+                  "doc_URL": "",
+                  "request_ID": ""
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/v1/health": {
+      "get": {
+        "tags": [
+          "System"
+        ],
+        "summary": "Health check",
+        "description": "Public endpoint to check whether the API is up and its database is reachable. Requires no authentication. Returns HTTP 200 when healthy, or HTTP 503 when the database is unreachable.",
+        "operationId": "healthCheck",
+        "responses": {
+          "200": {
+            "description": "The service is healthy and the database is reachable.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "status": {
+                      "type": "string",
+                      "example": "ok"
+                    },
+                    "DB": {
+                      "type": "string",
+                      "example": "online"
+                    }
+                  }
+                },
+                "example": {
+                  "status": "ok",
+                  "DB": "online"
+                }
+              }
+            }
+          },
+          "503": {
+            "description": "The service is up but the database is unreachable.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "status": {
+                      "type": "string",
+                      "example": "error"
+                    },
+                    "DB": {
+                      "type": "string",
+                      "example": "unreachable"
+                    }
+                  }
+                },
+                "example": {
+                  "status": "error",
+                  "DB": "unreachable"
+                }
+              }
+            }
+          }
+        }
+      }
+    }
+  },
+  "components": {
+    "securitySchemes": {
+      "ApiKeyAuth": {
+        "type": "http",
+        "scheme": "bearer",
+        "description": "Provide your API key as a Bearer token in the Authorization header: `Authorization: Bearer YOUR_API_KEY`."
+      }
+    },
+    "schemas": {
+      "SanitizeResponse": {
+        "type": "object",
+        "properties": {
+          "detectedType": {
+            "type": "string",
+            "description": "The true MIME type detected from the file's content (not its extension).",
+            "example": "image/jpeg"
+          },
+          "riskLevel": {
+            "type": "string",
+            "description": "Overall risk level of the original file, based on the most severe finding.",
+            "enum": [
+              "CLEAN",
+              "LOW",
+              "MEDIUM",
+              "HIGH",
+              "CRITICAL"
+            ],
+            "example": "LOW"
+          },
+          "findingsCount": {
+            "type": "integer",
+            "description": "The number of issues found and neutralized.",
+            "example": 2
+          },
+          "findings": {
+            "type": "array",
+            "description": "Details of each issue found and what was done about it.",
+            "items": {
+              "$ref": "#/components/schemas/Finding"
+            }
+          },
+          "sanitizedFile": {
+            "type": "string",
+            "description": "The sanitized file, base64-encoded. Decode it back into the original binary file. Node.js: Buffer.from(sanitizedFile, 'base64'). Python: base64.b64decode(sanitizedFile). Browser: atob(sanitizedFile) then build a Uint8Array/Blob.",
+            "example": "/9j/4AAQSkZJRgABAQ..."
+          },
+          "announcements": {
+            "type": "string",
+            "description": "Optional product announcements. Null when there are none.",
+            "nullable": true,
+            "example": null
+          }
+        }
+      },
+      "Finding": {
+        "type": "object",
+        "description": "A single issue that was found and neutralized during sanitization.",
+        "properties": {
+          "category": {
+            "type": "string",
+            "description": "The category of the issue.",
+            "enum": [
+              "xss",
+              "formula_injection",
+              "external_resource",
+              "metadata"
+            ],
+            "example": "metadata"
+          },
+          "action": {
+            "type": "string",
+            "description": "A human-readable description of what was done.",
+            "example": "removed EXIF metadata"
+          },
+          "type": {
+            "type": "string",
+            "description": "Additional detail about the specific issue (varies by category).",
+            "example": "exif"
+          },
+          "row": {
+            "type": "integer",
+            "description": "For CSV findings: the row index of the affected cell.",
+            "example": 1
+          },
+          "column": {
+            "type": "integer",
+            "description": "For CSV findings: the column index of the affected cell.",
+            "example": 1
+          }
+        }
+      },
+      "Error": {
+        "type": "object",
+        "properties": {
+          "code": {
+            "type": "string",
+            "description": "A stable, machine-readable error code.",
+            "example": "UNSUPPORTED_FILE_TYPE"
+          },
+          "status": {
+            "type": "integer",
+            "description": "The HTTP status code.",
+            "example": 415
+          },
+          "description": {
+            "type": "string",
+            "description": "A human-readable description of the error.",
+            "example": "Unsupported Media Type"
+          },
+          "doc_URL": {
+            "type": "string",
+            "description": "A link to documentation about this error, when available.",
+            "example": ""
+          },
+          "request_ID": {
+            "type": "string",
+            "description": "A unique identifier for this request, useful for support.",
+            "example": ""
+          }
+        }
+      }
+    }
+  }
+}
