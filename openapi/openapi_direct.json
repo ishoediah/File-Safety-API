@@ -12,7 +12,7 @@
   },
   "servers": [
     {
-      "url": "https://file-safety-api-production.up.railway.app",
+      "url": "https://file-safety-api.onrender.com",
       "description": "Production Server"
     }
   ],

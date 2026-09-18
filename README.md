@@ -70,7 +70,7 @@ Detection is content-based, not extension-based: a `.jpg` that is actually a PNG
 - **File-type detection:** [`file-type`](https://github.com/sindresorhus/file-type) (magic bytes)
 - **CSV parsing:** `csv-parse` / `csv-stringify`
 - **Testing:** [Vitest](https://vitest.dev/)
-- **Hosting:** Railway
+- **Hosting:** Render
 - **Distribution:** RapidAPI marketplace
 
 ---
