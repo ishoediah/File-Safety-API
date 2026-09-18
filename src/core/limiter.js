@@ -1,7 +1,7 @@
 import pLimit from "p-limit";
 
-const MAX_CONCURRENT = 10;
-const MAX_QUEUE = 5;
+const MAX_CONCURRENT = 2;
+const MAX_QUEUE = 2;
 
 const limit = pLimit(MAX_CONCURRENT)
 
